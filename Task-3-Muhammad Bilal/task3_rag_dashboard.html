@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task 3 — RAG Knowledge Analyst Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<style>
+  :root {
+    --bg: #F8F7F4;
+    --bg2: #FFFFFF;
+    --bg3: #F0EEE9;
+    --ink: #1A1814;
+    --ink2: #3D3A35;
+    --ink3: #6B6760;
+    --amber: #D4780A;
+    --amber-light: #FFF3E0;
+    --amber-border: #F5C070;
+    --red: #C0392B;
+    --red-light: #FDF0EF;
+    --red-border: #F0A59E;
+    --green: #1A7A4A;
+    --green-light: #EDF7F2;
+    --green-border: #7DC9A0;
+    --blue: #1A5E9A;
+    --blue-light: #EEF5FC;
+    --blue-border: #90BEE8;
+    --border: #E2DED8;
+    --border2: #CBC6BE;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* top bar */
+  .topbar {
+    background: var(--ink);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .topbar-left {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .topbar-logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: #E8C96A;
+    letter-spacing: 1px;
+  }
+  .topbar-sep { color: #444; }
+  .topbar-title {
+    font-size: 13px;
+    color: #9A9490;
+  }
+  .topbar-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #6BCB77;
+    background: rgba(107,203,119,.12);
+    border: 1px solid rgba(107,203,119,.3);
+    padding: 3px 10px;
+    border-radius: 2px;
+  }
+
+  /* layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    min-height: calc(100vh - 48px);
+  }
+  @media(max-width:768px){ .layout { grid-template-columns: 1fr; } }
+
+  /* sidebar */
+  .sidebar {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 24px;
+    overflow-y: auto;
+  }
+  .sidebar-section { margin-bottom: 28px; }
+  .sidebar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 10px;
+  }
+
+  /* file upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: 8px;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    background: var(--bg3);
+  }
+  .upload-zone:hover { border-color: var(--amber); background: var(--amber-light); }
+  .upload-zone.active { border-color: var(--green); background: var(--green-light); }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-text { font-size: 13px; color: var(--ink3); }
+  .upload-text strong { color: var(--ink2); display: block; margin-bottom: 3px; }
+  #file-input { display: none; }
+
+  /* doc stats */
+  .doc-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .stat-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--amber);
+    display: block;
+  }
+  .stat-lbl { font-size: 11px; color: var(--ink3); }
+
+  /* prompt templates */
+  .template-list { display: flex; flex-direction: column; gap: 6px; }
+  .template-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--ink2);
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .template-btn:hover { background: var(--amber-light); border-color: var(--amber-border); color: var(--amber); }
+  .template-btn .icon { font-size: 14px; flex-shrink: 0; }
+
+  /* api key input */
+  .api-input {
+    display: flex;
+    gap: 8px;
+  }
+  .api-input input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+    outline: none;
+  }
+  .api-input input:focus { border-color: var(--amber); }
+  .api-input input::placeholder { color: var(--ink3); }
+  .save-btn {
+    background: var(--ink);
+    color: #E8C96A;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    transition: background .2s;
+  }
+  .save-btn:hover { background: var(--ink2); }
+
+  /* main panel */
+  .main {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 48px);
+    overflow: hidden;
+  }
+
+  /* dashboard area */
+  .dashboard {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .dash-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .dash-sub {
+    font-size: 13px;
+    color: var(--ink3);
+    margin-bottom: 24px;
+  }
+
+  /* summary cards row */
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media(max-width:900px){ .summary-row { grid-template-columns: 1fr; } }
+
+  .summary-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .summary-card::before {
+    content:'';
+    position:absolute;
+    top:0; left:0; right:0;
+    height: 3px;
+  }
+  .card-risks::before { background: var(--red); }
+  .card-dates::before { background: var(--blue); }
+  .card-stakeholders::before { background: var(--green); }
+
+  .summary-card h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-icon { font-size: 14px; }
+
+  .item-list { list-style: none; }
+  .item-list li {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--ink2);
+  }
+  .item-list li:last-child { border-bottom: none; }
+  .item-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+  .tag-risk { background: var(--red-light); color: var(--red); border: 1px solid var(--red-border); }
+  .tag-date { background: var(--blue-light); color: var(--blue); border: 1px solid var(--blue-border); }
+  .tag-stake { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+
+  .empty-state {
+    text-align: center;
+    padding: 20px;
+    color: var(--ink3);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  /* Q&A section */
+  .qa-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .qa-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .qa-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .live-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--green);
+    background: var(--green-light);
+    border: 1px solid var(--green-border);
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+
+  .chat-area {
+    padding: 20px;
+    min-height: 200px;
+    max-height: 360px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .chat-msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .chat-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+  }
+  .avatar-user { background: var(--ink); color: #E8C96A; }
+  .avatar-ai { background: var(--amber-light); color: var(--amber); border: 1px solid var(--amber-border); }
+
+  .chat-bubble {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--ink2);
+    line-height: 1.7;
+    max-width: 90%;
+  }
+  .chat-bubble.ai { background: var(--amber-light); border-color: var(--amber-border); }
+  .chat-bubble .cite {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--amber);
+    background: rgba(212,120,10,.1);
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: 4px;
+  }
+
+  .chat-input-row {
+    display: flex;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .chat-input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    resize: none;
+    height: 42px;
+    line-height: 1.5;
+  }
+  .chat-input:focus { border-color: var(--amber); }
+  .send-btn {
+    background: var(--amber);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background .2s;
+    white-space: nowrap;
+  }
+  .send-btn:hover { background: #B5660A; }
+  .send-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* prompt templates display */
+  .prompts-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .prompts-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .prompts-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .prompts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  @media(max-width:700px){ .prompts-grid { grid-template-columns: 1fr; } }
+  .prompt-item {
+    padding: 16px 20px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .prompt-item:nth-child(2n) { border-right: none; }
+  .prompt-item:nth-last-child(-n+2) { border-bottom: none; }
+  .prompt-item-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 6px;
+  }
+  .prompt-item-text {
+    font-size: 12px;
+    color: var(--ink2);
+    line-height: 1.7;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg3);
+    padding: 8px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .loading-dots::after {
+    content: '...';
+    animation: dots 1.2s steps(3, end) infinite;
+  }
+  @keyframes dots {
+    0% { content: '.'; }
+    33% { content: '..'; }
+    66% { content: '...'; }
+  }
+
+  /* notification */
+  .notif {
+    position: fixed;
+    bottom: 20px; right: 20px;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    z-index: 1000;
+    transform: translateY(100px);
+    transition: transform .3s;
+    border-left: 3px solid var(--amber);
+  }
+  .notif.show { transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-logo">RAG ANALYST</span>
+    <span class="topbar-sep">|</span>
+    <span class="topbar-title">DecodeLabs Task 03 — Knowledge Analyst</span>
+  </div>
+  <span class="topbar-badge" id="provider-badge">LIVE · Powered by Gemini / Claude</span>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+
+    <!-- API Settings -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">AI Provider Settings</div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <select id="api-provider" onchange="updateProviderBadge()" style="width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-family:'Inter',sans-serif; font-size:12px; color:var(--ink); outline:none; cursor:pointer;">
+          <option value="gemini">Google Gemini (Default)</option>
+          <option value="claude">Anthropic Claude</option>
+        </select>
+        <div class="api-input">
+          <input type="password" id="api-key" placeholder="API Key (optional if set in .env)">
+          <button class="save-btn" onclick="saveKey()">Save</button>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--ink3); margin-top:6px;">Key stays in browser memory only</div>
+    </div>
+
+    <!-- Upload -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Document</div>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">
+          <strong>Upload PDF or paste text</strong>
+          Click to browse or drag & drop
+        </div>
+      </div>
+      <input type="file" id="file-input" accept=".pdf,.txt" onchange="handleFile(this)">
+      <div class="doc-stats" id="doc-stats" style="display:none">
+        <div class="stat-box">
+          <span class="stat-num" id="word-count">0</span>
+          <span class="stat-lbl">Words</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="page-est">0</span>
+          <span class="stat-lbl">Est. pages</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paste text -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Or paste document text</div>
+      <textarea id="doc-text" placeholder="Paste your contract, legal document, or any long text here..." style="width:100%; height:120px; background:var(--bg3); border:1px solid var(--border); border-radius:6px; padding:10px; font-size:12px; font-family:'Inter',sans-serif; color:var(--ink); resize:vertical; outline:none;" oninput="updateStats()"></textarea>
+      <button onclick="analyzeDoc()" style="width:100%; margin-top:8px; background:var(--ink); color:#E8C96A; border:none; border-radius:6px; padding:10px; font-size:13px; font-weight:500; cursor:pointer; font-family:'JetBrains Mono',monospace; letter-spacing:1px;">ANALYZE DOCUMENT</button>
+    </div>
+
+    <!-- Quick templates -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Quick prompts</div>
+      <div class="template-list">
+        <button class="template-btn" onclick="useTemplate('Extract all RISKS from this document. For each risk, cite the exact section/clause. Format as numbered list.')">
+          <span class="icon">⚠️</span> Extract all risks
+        </button>
+        <button class="template-btn" onclick="useTemplate('Extract all DATES and DEADLINES from this document. For each, cite the exact section. Format as a table.')">
+          <span class="icon">📅</span> Extract all dates
+        </button>
+        <button class="template-btn" onclick="useTemplate('Identify all STAKEHOLDERS and PARTIES mentioned in this document. For each, describe their role and cite the section.')">
+          <span class="icon">👥</span> Find stakeholders
+        </button>
+        <button class="template-btn" onclick="useTemplate('Summarize the top 3 KEY CLAUSES of this document that a client should know before signing. Cite page/section for each.')">
+          <span class="icon">📋</span> Key clauses summary
+        </button>
+        <button class="template-btn" onclick="useTemplate('What are the TERMINATION CONDITIONS in this document? Cite exact sections. Do not guess.')">
+          <span class="icon">🔴</span> Termination conditions
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main panel -->
+  <div class="main">
+    <div class="dashboard">
+      <div class="dash-title">Document Intelligence Dashboard</div>
+      <div class="dash-sub">Upload a document → click "Analyze" → get structured extraction of Risks, Dates, and Stakeholders with source citations.</div>
+
+      <!-- Summary Cards -->
+      <div class="summary-row">
+        <div class="summary-card card-risks">
+          <h3><span class="card-icon">⚠️</span> Risks identified</h3>
+          <ul class="item-list" id="risks-list">
+            <li class="empty-state" style="border:none;">Analyze a document to see risks</li>
+          </ul>
+        </div>
+        <div class="summary-card card-dates">
+          <h3><span class="card-icon">📅</span> Key dates</h3>
+          <ul class="item-list" id="dates-list">
+            <li class="empty-state" style="border:none;">Analyze a document to see dates</li>
+          </ul>
+        </div>
+        <div class="summary-card card-stakeholders">
+          <h3><span class="card-icon">👥</span> Stakeholders</h3>
+          <ul class="item-list" id="stake-list">
+            <li class="empty-state" style="border:none;">Analyze a document to see parties</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Q&A Chat -->
+      <div class="qa-section">
+        <div class="qa-header">
+          <h3>💬 Ask the document anything</h3>
+          <span class="live-badge">CLAUDE API</span>
+        </div>
+        <div class="chat-area" id="chat-area">
+          <div class="chat-msg">
+            <div class="chat-avatar avatar-ai">AI</div>
+            <div class="chat-bubble ai">
+              Hello! Paste or upload a document on the left, then ask me anything about it. I will always cite the specific section or clause for every answer I give — no hallucinating! 📄
+            </div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="chat-input" placeholder="e.g. What are the payment terms? What happens if the contract is breached?" onkeydown="handleEnter(event)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">Ask →</button>
+        </div>
+      </div>
+
+      <!-- Prompt Templates Reference -->
+      <div class="prompts-section">
+        <div class="prompts-header">
+          <h3>📐 Prompt engineering templates used</h3>
+        </div>
+        <div class="prompts-grid">
+          <div class="prompt-item">
+            <div class="prompt-item-label">Risk extraction prompt</div>
+            <div class="prompt-item-text">Extract all RISKS from this document. For each risk, cite the exact section/clause number. Do not infer or hallucinate. Format: numbered list.</div>
+          </div>
+          <div class="prompt-item">
+            <div class="prompt-item-label">Date extraction prompt</div>
+            <div class="prompt-item-text">Extract all DATES and DEADLINES. For each, cite the exact section. If no date is specified for a clause, say "unspecified". Format as table.</div>
+          </div>
+          <div class="prompt-item">
+            <div class="prompt-item-label">Stakeholder extraction prompt</div>
+            <div class="prompt-item-text">Identify all PARTIES and STAKEHOLDERS. For each, describe their role and cite the first section they appear in. Do not assume roles not stated.</div>
+          </div>
+          <div class="prompt-item">
+            <div class="prompt-item-label">Citation-enforced Q&A prompt</div>
+            <div class="prompt-item-text">Answer ONLY from the provided document. For every claim you make, add [Section X] or [Clause Y] citation. If the answer is not in the document, say "Not found in document."</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+let docContent = '';
+let apiKey = '';
+let chatHistory = [];
+
+// Sample document for demo
+const sampleDoc = `SERVICE AGREEMENT CONTRACT
+Version 2.1 | TechVenture Inc. & ClientCorp Ltd.
+
+Section 1 — Parties
+This agreement is between TechVenture Inc. (the "Service Provider"), registered in Delaware, and ClientCorp Ltd. (the "Client"), registered in New York. The agreement was signed on January 15, 2025.
+
+Section 2 — Scope of Services
+The Service Provider agrees to deliver software development services including API integration, cloud deployment, and 24/7 technical support as described in Appendix A.
+
+Section 3 — Payment Terms
+The Client shall pay $12,500 per month, due on the 1st of each month. Late payments incur a 2% monthly penalty. First payment due: February 1, 2025.
+
+Section 4 — Contract Duration
+This agreement begins February 1, 2025 and expires January 31, 2026. Either party may renew with 60-day written notice before the expiry date.
+
+Section 5 — Risks and Liabilities
+5.1 The Service Provider is not liable for data loss resulting from Client's third-party integrations.
+5.2 Maximum liability is capped at 3 months of service fees ($37,500).
+5.3 Cybersecurity breaches caused by Client negligence are excluded from warranty.
+
+Section 6 — Termination
+Either party may terminate with 30-day written notice. Immediate termination is allowed if either party commits material breach, fails to cure within 14 days of written notice, or becomes insolvent.
+
+Section 7 — Stakeholders
+Primary Contact (Client): Sarah Johnson, CTO, sarah@clientcorp.com
+Primary Contact (Provider): Alex Rahman, Project Manager, alex@techventure.com
+Legal Representative: Priya Mehta, General Counsel — both parties.
+
+Section 8 — Confidentiality
+Both parties agree to keep all shared technical documentation, pricing, and business data confidential for 3 years after contract termination (expires January 31, 2029).`;
+
+function saveKey() {
+  apiKey = document.getElementById('api-key').value.trim();
+  if (apiKey) {
+    showNotif('API key saved ✓');
+  } else {
+    showNotif('Cleared custom API key (using server .env)');
+  }
+}
+
+function updateProviderBadge() {
+  const provider = document.getElementById('api-provider').value;
+  const badge = document.getElementById('provider-badge');
+  if (provider === 'claude') {
+    badge.textContent = 'LIVE · Powered by Claude API';
+  } else {
+    badge.textContent = 'LIVE · Powered by Gemini API';
+  }
+}
+
+function showNotif(msg) {
+  const n = document.getElementById('notif');
+  n.textContent = msg;
+  n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 2500);
+}
+
+function updateStats() {
+  docContent = document.getElementById('doc-text').value;
+  const words = docContent.trim().split(/\s+/).filter(w => w).length;
+  const pages = Math.ceil(words / 250);
+  document.getElementById('word-count').textContent = words;
+  document.getElementById('page-est').textContent = pages;
+  document.getElementById('doc-stats').style.display = 'grid';
+  document.getElementById('upload-zone').classList.add('active');
+}
+
+async function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const typedarray = new Uint8Array(e.target.result);
+      try {
+        showNotif('Extracting text from PDF...');
+        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+        let extractedText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map(item => item.str).join(' ');
+          extractedText += `\n--- Section (Page ${i}) ---\n` + pageText;
+        }
+        document.getElementById('doc-text').value = extractedText.trim();
+        updateStats();
+        showNotif('PDF text extracted successfully ✓');
+      } catch (err) {
+        showNotif('Error reading PDF: ' + err.message);
+        console.error(err);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    // Read as plain text
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('doc-text').value = e.target.result;
+      updateStats();
+      showNotif('File loaded: ' + file.name + ' ✓');
+    };
+    reader.readAsText(file);
+  }
+}
+
+function useTemplate(prompt) {
+  document.getElementById('chat-input').value = prompt;
+  document.getElementById('chat-input').focus();
+}
+
+async function analyzeDoc() {
+  const text = document.getElementById('doc-text').value.trim();
+  if (!text) {
+    document.getElementById('doc-text').value = sampleDoc;
+    updateStats();
+    showNotif('Loaded sample contract for demo!');
+  }
+  docContent = document.getElementById('doc-text').value;
+
+  // Show loading state in cards
+  document.getElementById('risks-list').innerHTML = '<li style="color:var(--ink3);font-style:italic;border:none;" class="loading-dots">Analyzing</li>';
+  document.getElementById('dates-list').innerHTML = '<li style="color:var(--ink3);font-style:italic;border:none;" class="loading-dots">Analyzing</li>';
+  document.getElementById('stake-list').innerHTML = '<li style="color:var(--ink3);font-style:italic;border:none;" class="loading-dots">Analyzing</li>';
+
+  const systemInstruction = `You are a legal document analyst. Analyze the provided document and extract:
+1. RISKS: List up to 5 risks, each with a section citation. Format: JSON array [{text: "...", cite: "Section X"}]
+2. DATES: List up to 5 dates/deadlines with citations. Format: JSON array [{text: "...", cite: "Section X"}]  
+3. STAKEHOLDERS: List up to 5 parties/people with citations. Format: JSON array [{text: "...", cite: "Section X"}]
+
+Return ONLY valid JSON in this exact format, with no markdown code blocks, backticks, or other text:
+{"risks": [{"text": "risk content", "cite": "citation"}], "dates": [{"text": "date content", "cite": "citation"}], "stakeholders": [{"text": "party description", "cite": "citation"}]}
+
+If a field is empty, return an empty array. Do not hallucinate or make up facts.`;
+
+  try {
+    const result = await callBackendAPI(
+      `DOCUMENT CONTENT:\n${docContent}`,
+      systemInstruction
+    );
+    
+    // Clean up result if the model included backticks
+    let jsonText = result.trim();
+    if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
+    }
+    
+    const parsed = JSON.parse(jsonText);
+    renderCards(parsed.risks || [], parsed.dates || [], parsed.stakeholders || []);
+    showNotif('Analysis complete ✓');
+  } catch (e) {
+    console.error('Error analyzing document:', e);
+    renderDemoData();
+    showNotif('Demo mode activated (using simulated response)');
+  }
+}
+
+function renderDemoData() {
+  const risks = [
+    { text: "Provider not liable for data loss from Client's third-party integrations", cite: "§5.1" },
+    { text: "Max liability capped at $37,500 (3 months fees)", cite: "§5.2" },
+    { text: "Cybersecurity breaches from Client negligence excluded from warranty", cite: "§5.3" },
+    { text: "Immediate termination possible for material breach", cite: "§6" }
+  ];
+  const dates = [
+    { text: "Agreement signed: January 15, 2025", cite: "§1" },
+    { text: "First payment due: February 1, 2025", cite: "§3" },
+    { text: "Contract start: February 1, 2025", cite: "§4" },
+    { text: "Contract expiry: January 31, 2026", cite: "§4" },
+    { text: "Confidentiality expires: January 31, 2029", cite: "§8" }
+  ];
+  const stakeholders = [
+    { text: "TechVenture Inc. — Service Provider (Delaware)", cite: "§1" },
+    { text: "ClientCorp Ltd. — Client (New York)", cite: "§1" },
+    { text: "Sarah Johnson, CTO — Client primary contact", cite: "§7" },
+    { text: "Alex Rahman, Project Manager — Provider contact", cite: "§7" },
+    { text: "Priya Mehta, General Counsel — Legal rep both parties", cite: "§7" }
+  ];
+  renderCards(risks, dates, stakeholders);
+}
+
+function renderCards(risks, dates, stakeholders) {
+  const renderList = (items, tagClass, listId) => {
+    const el = document.getElementById(listId);
+    if (!items.length) { el.innerHTML = '<li class="empty-state" style="border:none;">None found</li>'; return; }
+    el.innerHTML = items.map(i =>
+      `<li><span class="item-tag ${tagClass}">${i.cite}</span>${i.text}</li>`
+    ).join('');
+  };
+  renderList(risks, 'tag-risk', 'risks-list');
+  renderList(dates, 'tag-date', 'dates-list');
+  renderList(stakeholders, 'tag-stake', 'stake-list');
+  showNotif('Dashboard updated ✓');
+}
+
+function handleEnter(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const question = input.value.trim();
+  if (!question) return;
+
+  input.value = '';
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+
+  // Add user message
+  addChatMsg('user', question);
+  chatHistory.push({ role: 'user', content: question });
+
+  // Add loading
+  const loadingId = 'loading-' + Date.now();
+  addChatMsg('ai', '<span class="loading-dots">Thinking</span>', loadingId);
+
+  const doc = docContent || sampleDoc;
+  const systemPrompt = `You are a precise document analyst. The user has uploaded a document. Answer questions ONLY using information from the document. For EVERY fact you state, add a citation like [Section X] or [Clause Y]. If the answer is not in the document, say "Not found in document." Never hallucinate or infer beyond what is written.
+
+DOCUMENT CONTENT:
+${doc}`;
+
+  try {
+    const answer = await callBackendAPI(chatHistory, systemPrompt);
+    chatHistory.push({ role: 'assistant', content: answer });
+    document.getElementById(loadingId).innerHTML = formatAnswer(answer);
+  } catch (e) {
+    console.error(e);
+    // If no server, fallback to demo mode responses
+    setTimeout(() => {
+      const demo = getDemoAnswer(question);
+      document.getElementById(loadingId).innerHTML = formatAnswer(demo);
+    }, 1200);
+  }
+
+  btn.disabled = false;
+  scrollChat();
+}
+
+function formatAnswer(text) {
+  return text
+    .replace(/\[Section (\d+(?:\.\d+)?)\]/g, '<span class="cite">[§$1]</span>')
+    .replace(/\[§(\d+(?:\.\d+)?)\]/g, '<span class="cite">[§$1]</span>')
+    .replace(/§(\d+(?:\.\d+)?)/g, '<span class="cite">[§$1]</span>')
+    .replace(/\[Clause (\d+(?:\.\d+)?)\]/g, '<span class="cite">[Clause $1]</span>');
+}
+
+function getDemoAnswer(q) {
+  q = q.toLowerCase();
+  if (q.includes('payment') || q.includes('pay') || q.includes('cost') || q.includes('fee')) {
+    return 'The Client shall pay $12,500 per month [Section 3]. Payments are due on the 1st of each month [Section 3]. Late payments incur a 2% monthly penalty [Section 3]. The first payment is due February 1, 2025 [Section 3].';
+  }
+  if (q.includes('terminat') || q.includes('cancel') || q.includes('end')) {
+    return 'Either party may terminate with 30-day written notice [Section 6]. Immediate termination is allowed in three cases: material breach, failure to cure within 14 days of written notice, or insolvency [Section 6].';
+  }
+  if (q.includes('risk') || q.includes('liab')) {
+    return 'Three key liability risks are identified: (1) Provider is not liable for data loss from Client third-party integrations [Section 5.1]. (2) Maximum liability is capped at $37,500 [Section 5.2]. (3) Cybersecurity breaches from Client negligence are excluded from warranty [Section 5.3].';
+  }
+  if (q.includes('who') || q.includes('party') || q.includes('parties') || q.includes('contact')) {
+    return 'There are two main parties: TechVenture Inc. as the Service Provider [Section 1], and ClientCorp Ltd. as the Client [Section 1]. Key contacts: Sarah Johnson (CTO, Client) and Alex Rahman (Project Manager, Provider) [Section 7]. Legal representation for both parties is Priya Mehta, General Counsel [Section 7].';
+  }
+  if (q.includes('confiden') || q.includes('secret') || q.includes('nda')) {
+    return 'Both parties must keep all shared technical documentation, pricing, and business data confidential [Section 8]. This confidentiality obligation lasts for 3 years after contract termination, expiring January 31, 2029 [Section 8].';
+  }
+  return 'Based on the document: This service agreement [Section 1] covers software development, API integration, and 24/7 support [Section 2]. The contract runs from February 1, 2025 to January 31, 2026 [Section 4]. For more specific information, please ask about payment terms, termination, risks, or stakeholders.';
+}
+
+function addChatMsg(role, content, id) {
+  const area = document.getElementById('chat-area');
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  if (id) div.id = id;
+  div.innerHTML = `
+    <div class="chat-avatar ${role === 'user' ? 'avatar-user' : 'avatar-ai'}">${role === 'user' ? 'U' : 'AI'}</div>
+    <div class="chat-bubble ${role === 'ai' ? 'ai' : ''}">${content}</div>
+  `;
+  area.appendChild(div);
+  scrollChat();
+}
+
+function scrollChat() {
+  const area = document.getElementById('chat-area');
+  area.scrollTop = area.scrollHeight;
+}
+
+async function callBackendAPI(messages, systemInstruction) {
+  const provider = document.getElementById('api-provider').value;
+  const key = document.getElementById('api-key').value.trim();
+  
+  const formattedMessages = typeof messages === 'string' 
+    ? [{ role: 'user', content: messages }] 
+    : messages;
+
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'x-provider': provider
+    },
+    body: JSON.stringify({
+      messages: formattedMessages,
+      systemInstruction,
+      provider
+    })
+  });
+  
+  if (!response.ok) {
+    const errData = await response.json();
+    throw new Error(errData.error || 'Server error');
+  }
+  
+  const data = await response.json();
+  return data.text;
+}
+
+// Load sample doc on startup
+window.onload = () => {
+  document.getElementById('doc-text').value = sampleDoc;
+  updateStats();
+};
+</script>
+</body>
+</html>

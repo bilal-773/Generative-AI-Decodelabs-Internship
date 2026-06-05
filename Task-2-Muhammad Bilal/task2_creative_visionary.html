@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task 2 — The Creative Visionary</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080B14;
+    --bg2: #0D1220;
+    --bg3: #111827;
+    --cyan: #00F5D4;
+    --cyan-dim: #00A896;
+    --cyan-dark: #003D36;
+    --magenta: #FF2D78;
+    --magenta-dim: #8B1040;
+    --yellow: #FFE234;
+    --white: #E8EDF5;
+    --muted: #6B7A9F;
+    --border: #1E2A45;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  /* scanline effect */
+  body::after {
+    content:'';
+    position:fixed;
+    inset:0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,245,212,0.012) 2px, rgba(0,245,212,0.012) 4px);
+    pointer-events:none;
+    z-index:999;
+  }
+
+  .container { max-width: 960px; margin:0 auto; padding: 52px 24px; }
+
+  /* header */
+  .header { margin-bottom: 64px; }
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .task-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    background: var(--cyan-dark);
+    border: 1px solid var(--cyan-dim);
+    padding: 4px 12px;
+    border-radius: 2px;
+  }
+  .brand-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+  }
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -2px;
+    margin-bottom: 16px;
+  }
+  h1 .cyan { color: var(--cyan); }
+  h1 .mag { color: var(--magenta); }
+  .header-desc {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 600px;
+    line-height: 1.8;
+  }
+
+  /* brand spec box */
+  .brand-spec {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--cyan);
+    border-radius: 4px;
+    padding: 28px 32px;
+    margin-bottom: 48px;
+  }
+  .brand-spec h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--cyan);
+  }
+  .spec-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .spec-item { }
+  .spec-key {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .spec-val {
+    font-size: 14px;
+    color: var(--white);
+    font-weight: 500;
+  }
+  .color-swatches { display:flex; gap:8px; margin-top:6px; }
+  .swatch {
+    width: 22px; height: 22px; border-radius: 3px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #000;
+    font-weight: 500;
+  }
+
+  /* section label */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .section-label span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--cyan);
+  }
+  .section-label::after {
+    content:''; flex:1; height:1px;
+    background: linear-gradient(90deg, var(--cyan-dark), transparent);
+  }
+
+  /* prompt card */
+  .prompt-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+  .prompt-card:hover { border-color: var(--cyan-dim); }
+
+  .prompt-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .prompt-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--cyan);
+    opacity: .4;
+    min-width: 36px;
+  }
+  .prompt-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+  .prompt-type {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 2px;
+    background: var(--cyan-dark);
+    color: var(--cyan);
+    border: 1px solid var(--cyan-dim);
+    white-space: nowrap;
+  }
+
+  .prompt-body { padding: 24px; }
+
+  /* prompt block */
+  .prompt-section { margin-bottom: 20px; }
+  .prompt-section:last-child { margin-bottom: 0; }
+  .prompt-section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--cyan-dim);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .prompt-text {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--cyan-dim);
+    border-radius: 3px;
+    padding: 14px 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.9;
+    color: #C8D8F0;
+    position: relative;
+  }
+  .prompt-neg {
+    border-left-color: var(--magenta-dim);
+  }
+  .prompt-text .tag-p { color: var(--cyan); }
+  .prompt-text .tag-n { color: var(--magenta); }
+  .prompt-text .tag-s { color: var(--yellow); }
+
+  /* meta row */
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .meta-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .meta-tag b { color: var(--white); }
+
+  /* tool row */
+  .tool-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .tool-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 2px;
+    border: 1px solid;
+  }
+  .tool-free { color: #6BCB77; border-color: rgba(107,203,119,.3); background: rgba(107,203,119,.05); }
+  .tool-paid { color: var(--muted); border-color: var(--border); }
+
+  /* img2img section */
+  .i2i-card {
+    background: linear-gradient(135deg, var(--bg2) 0%, #14082A 100%);
+    border: 1px solid #3D1060;
+    border-top: 2px solid var(--magenta);
+    border-radius: 6px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+  }
+  .i2i-card h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--magenta);
+    margin-bottom: 16px;
+  }
+
+  /* steps */
+  .steps { }
+  .step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--magenta);
+    background: var(--magenta-dim);
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-text { font-size: 14px; color: #C0CADF; line-height: 1.7; padding-top: 3px; }
+  .step-text strong { color: var(--white); }
+
+  /* submission guide */
+  .submit-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 28px 32px;
+  }
+  .submit-card h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .submit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media(max-width:600px){ .submit-grid { grid-template-columns: 1fr; } }
+  .submit-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 20px;
+  }
+  .submit-item h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 10px;
+  }
+  .submit-item ul {
+    list-style: none;
+    font-size: 13px;
+    color: #8A9BBF;
+    line-height: 1.9;
+  }
+  .submit-item ul li::before { content: '→ '; color: var(--cyan); }
+
+  .footer {
+    text-align:center;
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <span class="task-num">TASK 02</span>
+      <span class="brand-name">DECODELABS · BATCH 2026</span>
+    </div>
+    <h1>The <span class="cyan">Creative</span><br><span class="mag">Visionary</span></h1>
+    <p class="header-desc">5 complete image generation prompts for a "Cyberpunk-Corporate" tech startup rebrand — with negative prompts, aspect ratios, lighting styles, and img2img workflow guide.</p>
+  </div>
+
+  <!-- Brand Spec -->
+  <div class="brand-spec">
+    <h2>// Brand identity spec — NeuralNexus Corp</h2>
+    <div class="spec-grid">
+      <div class="spec-item">
+        <div class="spec-key">Aesthetic</div>
+        <div class="spec-val">Cyberpunk-Corporate</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-key">Primary Palette</div>
+        <div class="color-swatches">
+          <div class="swatch" style="background:#00F5D4;">cyan</div>
+          <div class="swatch" style="background:#FF2D78; color:#fff;">mag</div>
+          <div class="swatch" style="background:#0D1220; color:#fff;">dark</div>
+          <div class="swatch" style="background:#FFE234;">yel</div>
+        </div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-key">Lighting Style</div>
+        <div class="spec-val">Neon rim lights, volumetric fog, hard shadow</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-key">Mood</div>
+        <div class="spec-val">Futuristic, precise, powerful, slightly dystopian</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-key">Assets Needed</div>
+        <div class="spec-val">Logo, Hero image, Icon set (×3)</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-key">Total Images</div>
+        <div class="spec-val">5 images</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompts -->
+  <div class="section-label"><span>Image Prompts</span></div>
+
+  <!-- Prompt 1 -->
+  <div class="prompt-card">
+    <div class="prompt-header">
+      <span class="prompt-num">01</span>
+      <span class="prompt-title">Logo concept</span>
+      <span class="prompt-type">LOGO · 1:1</span>
+    </div>
+    <div class="prompt-body">
+      <div class="prompt-section">
+        <div class="prompt-section-label">Positive prompt</div>
+        <div class="prompt-text">
+<span class="tag-p">minimalist corporate logo</span>, abstract neural network node symbol, 
+interconnected hexagonal lattice, <span class="tag-p">glowing cyan neon lines</span> on 
+<span class="tag-p">deep matte black background</span>, circuit board aesthetic, 
+geometric precision, <span class="tag-s">flat vector style</span>, ultra clean edges, 
+<span class="tag-p">cyberpunk corporate identity</span>, single color accent #00F5D4, 
+centered composition, high contrast, professional brand mark, 
+<span class="tag-s">4K, sharp focus, no text, no words</span>
+        </div>
+      </div>
+      <div class="prompt-section">
+        <div class="prompt-section-label">Negative prompt</div>
+        <div class="prompt-text prompt-neg">
+<span class="tag-n">--no</span> people, humans, faces, organic shapes, gradients, 
+rainbow colors, messy, cluttered, photorealistic, 3D render, 
+drop shadow, lens flare, watermark, blurry, low quality, 
+serif fonts, decorative borders, red, green, orange
+        </div>
+      </div>
+      <div class="meta-row">
+        <span class="meta-tag">Aspect ratio: <b>1:1 (1024×1024)</b></span>
+        <span class="meta-tag">Style: <b>Vector / flat</b></span>
+        <span class="meta-tag">Lighting: <b>Self-illuminated neon</b></span>
+        <span class="meta-tag">Quality: <b>--q 2 --s 750</b></span>
+      </div>
+      <div class="tool-row">
+        <span class="tool-badge tool-free">✓ DALL-E 3 (free)</span>
+        <span class="tool-badge tool-free">✓ Midjourney v6</span>
+        <span class="tool-badge tool-free">✓ Stable Diffusion XL</span>
+      </div>
+      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px; text-align:center;">
+        <div class="spec-key" style="margin-bottom:10px;">Generated Output</div>
+        <img src="assets/logo.png" alt="NeuralNexus Logo Concept" style="max-width:100%; max-height:300px; border-radius:4px; border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.5); transition:transform .3s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt 2 -->
+  <div class="prompt-card">
+    <div class="prompt-header">
+      <span class="prompt-num">02</span>
+      <span class="prompt-title">Hero image — website banner</span>
+      <span class="prompt-type">HERO · 16:9</span>
+    </div>
+    <div class="prompt-body">
+      <div class="prompt-section">
+        <div class="prompt-section-label">Positive prompt</div>
+        <div class="prompt-text">
+<span class="tag-p">cinematic wide-angle shot</span>, futuristic corporate headquarters 
+interior at night, <span class="tag-p">holographic data projections</span> floating in air, 
+neon cyan and magenta light streaks on glass walls, 
+<span class="tag-p">lone silhouette of a business professional</span> in sharp suit 
+facing a massive glowing data wall, volumetric fog, 
+<span class="tag-p">cyberpunk corporate atmosphere</span>, ultra modern architecture, 
+dramatic rim lighting, depth of field, 
+<span class="tag-s">hyperrealistic, 8K, photographic, award winning photography</span>, 
+high contrast dark background, moody, powerful
+        </div>
+      </div>
+      <div class="prompt-section">
+        <div class="prompt-section-label">Negative prompt</div>
+        <div class="prompt-text prompt-neg">
+<span class="tag-n">--no</span> daylight, sunlight, cheerful, colorful flowers, 
+casual clothing, multiple people, text overlay, watermark, 
+cartoonish, anime, illustration, low detail, ugly, 
+oversaturated, washed out, warm tones, orange
+        </div>
+      </div>
+      <div class="meta-row">
+        <span class="meta-tag">Aspect ratio: <b>16:9 (1920×1080)</b></span>
+        <span class="meta-tag">Style: <b>Cinematic photography</b></span>
+        <span class="meta-tag">Lighting: <b>Volumetric neon + fog</b></span>
+        <span class="meta-tag">Camera: <b>Wide angle, f/1.8</b></span>
+      </div>
+      <div class="tool-row">
+        <span class="tool-badge tool-free">✓ DALL-E 3 (free)</span>
+        <span class="tool-badge tool-paid">Midjourney v6 (paid)</span>
+        <span class="tool-badge tool-free">✓ Stable Diffusion XL</span>
+      </div>
+      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px; text-align:center;">
+        <div class="spec-key" style="margin-bottom:10px;">Generated Output</div>
+        <img src="assets/hero.png" alt="Hero Image Website Banner" style="max-width:100%; max-height:400px; border-radius:4px; border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.5); transition:transform .3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt 3 -->
+  <div class="prompt-card">
+    <div class="prompt-header">
+      <span class="prompt-num">03</span>
+      <span class="prompt-title">Icon — AI / data intelligence</span>
+      <span class="prompt-type">ICON · 1:1</span>
+    </div>
+    <div class="prompt-body">
+      <div class="prompt-section">
+        <div class="prompt-section-label">Positive prompt</div>
+        <div class="prompt-text">
+<span class="tag-p">flat icon design</span>, stylized brain with circuit traces, 
+<span class="tag-p">cyan wireframe lines on black</span>, geometric angular shapes, 
+sharp corners, minimal detail, tech company app icon style, 
+<span class="tag-p">neon glow effect</span>, centered symmetrical composition, 
+crisp vector lines, corporate tech icon, 
+<span class="tag-s">SVG-style flat illustration, clean edges, 512px</span>
+        </div>
+      </div>
+      <div class="prompt-section">
+        <div class="prompt-section-label">Negative prompt</div>
+        <div class="prompt-text prompt-neg">
+<span class="tag-n">--no</span> photorealistic brain, organic texture, pink flesh tones, 
+3D render, text, labels, gradients, background patterns,
+complex details, human face, multiple colors, warm tones
+        </div>
+      </div>
+      <div class="meta-row">
+        <span class="meta-tag">Aspect ratio: <b>1:1 (512×512)</b></span>
+        <span class="meta-tag">Style: <b>Flat icon / vector</b></span>
+        <span class="meta-tag">Lighting: <b>Self-lit neon lines</b></span>
+      </div>
+      <div class="tool-row">
+        <span class="tool-badge tool-free">✓ DALL-E 3 (free)</span>
+        <span class="tool-badge tool-free">✓ Stable Diffusion XL</span>
+      </div>
+      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px; text-align:center;">
+        <div class="spec-key" style="margin-bottom:10px;">Generated Output</div>
+        <img src="assets/icon-ai.png" alt="AI brain icon" style="max-width:100%; max-height:200px; border-radius:4px; border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.5); transition:transform .3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt 4 -->
+  <div class="prompt-card">
+    <div class="prompt-header">
+      <span class="prompt-num">04</span>
+      <span class="prompt-title">Icon — cybersecurity / shield</span>
+      <span class="prompt-type">ICON · 1:1</span>
+    </div>
+    <div class="prompt-body">
+      <div class="prompt-section">
+        <div class="prompt-section-label">Positive prompt</div>
+        <div class="prompt-text">
+<span class="tag-p">minimal geometric shield icon</span>, angular hexagonal shape, 
+<span class="tag-p">magenta pink neon glow on matte black</span>, 
+circuit trace pattern inside shield, digital lock symbol, 
+<span class="tag-p">cyberpunk security emblem</span>, flat 2D vector, 
+symmetric design, sharp precision lines, 
+<span class="tag-s">tech icon, transparent background, clean</span>
+        </div>
+      </div>
+      <div class="prompt-section">
+        <div class="prompt-section-label">Negative prompt</div>
+        <div class="prompt-text prompt-neg">
+<span class="tag-n">--no</span> 3D, metallic sheen, texture, gradients, human figure, 
+text, badge ribbon, realistic lock, complex illustration, 
+blue tones, green tones, warm colors
+        </div>
+      </div>
+      <div class="meta-row">
+        <span class="meta-tag">Aspect ratio: <b>1:1 (512×512)</b></span>
+        <span class="meta-tag">Style: <b>Flat geometric icon</b></span>
+        <span class="meta-tag">Accent: <b>Magenta #FF2D78</b></span>
+      </div>
+      <div class="tool-row">
+        <span class="tool-badge tool-free">✓ DALL-E 3 (free)</span>
+        <span class="tool-badge tool-free">✓ Stable Diffusion XL</span>
+      </div>
+      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px; text-align:center;">
+        <div class="spec-key" style="margin-bottom:10px;">Generated Output</div>
+        <img src="assets/icon-security.png" alt="Cybersecurity shield icon" style="max-width:100%; max-height:200px; border-radius:4px; border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.5); transition:transform .3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt 5 -->
+  <div class="prompt-card">
+    <div class="prompt-header">
+      <span class="prompt-num">05</span>
+      <span class="prompt-title">Icon — network / connectivity</span>
+      <span class="prompt-type">ICON · 1:1</span>
+    </div>
+    <div class="prompt-body">
+      <div class="prompt-section">
+        <div class="prompt-section-label">Positive prompt</div>
+        <div class="prompt-text">
+<span class="tag-p">minimalist network node icon</span>, 5 glowing dots connected 
+by thin lines, <span class="tag-p">constellation pattern</span>, 
+cyan electric glow, dark navy background, 
+dot-and-line tech aesthetic, <span class="tag-p">clean flat design</span>, 
+angular geometry, digital network graph visualization, 
+<span class="tag-s">app icon, vector flat, 512px, ultra sharp</span>
+        </div>
+      </div>
+      <div class="prompt-section">
+        <div class="prompt-section-label">Negative prompt</div>
+        <div class="prompt-text prompt-neg">
+<span class="tag-n">--no</span> globe, earth, map, people, 3D, photorealistic, 
+gradients, text, labels, cluttered, complex, warm colors, 
+organic shapes, bubbles
+        </div>
+      </div>
+      <div class="meta-row">
+        <span class="meta-tag">Aspect ratio: <b>1:1 (512×512)</b></span>
+        <span class="meta-tag">Style: <b>Constellation / dot-line</b></span>
+        <span class="meta-tag">Accent: <b>Cyan #00F5D4</b></span>
+      </div>
+      <div class="tool-row">
+        <span class="tool-badge tool-free">✓ DALL-E 3 (free)</span>
+        <span class="tool-badge tool-free">✓ Stable Diffusion XL</span>
+      </div>
+      <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:20px; text-align:center;">
+        <div class="spec-key" style="margin-bottom:10px;">Generated Output</div>
+        <img src="assets/icon-network.png" alt="Network connectivity icon" style="max-width:100%; max-height:200px; border-radius:4px; border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.5); transition:transform .3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Img2Img Section -->
+  <div class="section-label" style="margin-top:48px;"><span>Image-to-Image Workflow</span></div>
+  <div class="i2i-card">
+    <h2>// Img2Img: keeping characters consistent across scenes</h2>
+    <p style="font-size:14px; color:#9BAACF; margin-bottom:24px; line-height:1.8;">
+      For the hero image (Image 02), use img2img to create variations while keeping the same professional silhouette consistent. This is how you "translate" one image into different scenes.
+    </p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Generate your base image first.</strong> Use Prompt 02 to create the hero image. This becomes your reference/seed image.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Upload to Stable Diffusion (img2img tab)</strong> or use DALL-E 3's "Edit Image" feature. Set <strong>Denoising Strength to 0.55–0.70</strong> — this keeps the composition but changes lighting/style.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Write a variation prompt:</strong> "Same composition, same silhouette, but now exterior rooftop at night, rain on glass, neon city reflections below, magenta accent lighting instead of cyan"</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>Generate 3 variations</strong> — outdoor scene, conference room scene, server room scene. Same character, same brand feel, different context. This proves img2img mastery.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-text"><strong>Free tool to use:</strong> Go to <strong>stability.ai/stable-diffusion</strong> → DreamStudio (free credits) or use <strong>Clipdrop.co</strong> (free img2img). No GPU needed.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Img2Img Comparison Gallery -->
+  <div class="section-label" style="margin-top:24px;"><span>Img2Img Translation Demonstration</span></div>
+  <div class="card" style="background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:28px 32px;">
+    <h2>// Img2Img Translation: Base vs. Variation</h2>
+    <p style="font-size:14px; color:#9BAACF; margin-bottom:20px; line-height:1.7;">
+      This visual comparison demonstrates the image-to-image pipeline: taking the base **Hero Image** composition (cyberpunk corporate office room at night) and translating it into a consistent rooftop scene during rain, showing visual layout preservation with changed context.
+    </p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+      <div style="text-align:center;">
+        <div class="spec-key" style="margin-bottom:8px;">Base Hero (Interior Office)</div>
+        <img src="assets/hero.png" alt="Base Hero Image" style="width:100%; border-radius:4px; border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.5);" />
+      </div>
+      <div style="text-align:center;">
+        <div class="spec-key" style="margin-bottom:8px;">Img2Img Translation (Rainy Rooftop)</div>
+        <img src="assets/hero_variation.png" alt="Img2Img Hero Variation" style="width:100%; border-radius:4px; border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.5);" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Submission Guide -->
+  <div class="section-label"><span>Submission Checklist</span></div>
+  <div class="submit-card">
+    <h2>What to submit for Task 2</h2>
+    <div class="submit-grid">
+      <div class="submit-item">
+        <h3>Files to generate</h3>
+        <ul>
+          <li>Image 1: Logo concept (1:1)</li>
+          <li>Image 2: Hero banner (16:9)</li>
+          <li>Image 3: AI icon (1:1)</li>
+          <li>Image 4: Security icon (1:1)</li>
+          <li>Image 5: Network icon (1:1)</li>
+        </ul>
+      </div>
+      <div class="submit-item">
+        <h3>What to document</h3>
+        <ul>
+          <li>Screenshot each prompt + output</li>
+          <li>Note which tool you used</li>
+          <li>Show 1 img2img variation pair</li>
+          <li>Upload all to GitHub /assets folder</li>
+          <li>Link this HTML as prompt doc</li>
+        </ul>
+      </div>
+      <div class="submit-item">
+        <h3>Free tools to use</h3>
+        <ul>
+          <li>DALL-E 3 via ChatGPT (free)</li>
+          <li>Stable Diffusion: clipdrop.co</li>
+          <li>Canva AI (free tier)</li>
+          <li>Adobe Firefly (free)</li>
+        </ul>
+      </div>
+      <div class="submit-item">
+        <h3>GitHub folder structure</h3>
+        <ul>
+          <li>/task2/prompts.html (this file)</li>
+          <li>/task2/assets/logo.png</li>
+          <li>/task2/assets/hero.png</li>
+          <li>/task2/assets/icon-ai.png</li>
+          <li>/task2/assets/icon-security.png</li>
+          <li>/task2/assets/icon-network.png</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Muhammad Bilal · 24P-0530 · DecodeLabs Generative AI Internship · Task 02 of 05
+  </div>
+</div>
+</body>
+</html>
